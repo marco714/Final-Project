@@ -3,7 +3,7 @@ from data import (
 )
 import tkinter as tk
 
-# THIS IS THE MASTER BRANCH
+# THIS IS MASTER Branch
 def run_input(entry,another_window):
     tk = another_window
     user_input = entry
