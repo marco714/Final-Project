@@ -6,7 +6,7 @@ import pprint
 import threading
 import time
 import re
-
+import pyttsx3
 
 API_KEY = "tfA5-hX-EHFT"
 PROJECT_TOKEN = "tkAYM1OPy9vX"
@@ -192,6 +192,11 @@ class ConnectToDatabase:
             db.update_total_info(name, num_total_cases)
 
         print("Successfully Updated Total")
+def speak(text):
+     
+    engine = pyttsx3.init()
+    engine.say(text)
+    engine.runAndWait()
 
 def run_data(user_input,topFrame):
     global graph_result
@@ -236,6 +241,7 @@ def run_data(user_input,topFrame):
                     graph_result.setdefault("Past-Total-Result", connect.fetch_total_data())
 
                     result = func(country)
+                    speak(result)
                     return f"{country}: {result}"
     
     for pattern, func in TOTAL_PATTERN.items():
@@ -246,18 +252,22 @@ def run_data(user_input,topFrame):
             graph_result.setdefault("Past-Total-Result", connect.fetch_total_data())
 
             result = func()
+            speak(result)
             return result
     
 
     if country_input.lower() == UPDATE_COMMAND:
         print("It is being updated now")
-        tracker_data.update_data()
 
+        result = "The Data is Now Updated"
+        tracker_data.update_data()
         data = tracker_data.get_data()
         connect.update_country_data(data)
         connect.update_total_data(data)
         graph_result.setdefault("Present-Country-Result", connect.fetch_country_data())
         graph_result.setdefault("Present-Total-Result", connect.fetch_total_data())
+        
+        speak(result)
         return "The Data is Now Updated"
     
     if country_input.lower() == "show table":
