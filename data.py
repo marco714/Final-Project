@@ -10,7 +10,7 @@ import pyttsx3
 
 API_KEY = "tfA5-hX-EHFT"
 PROJECT_TOKEN = "tkAYM1OPy9vX"
-RUN_TOKEN = "tZM8cxGo1uTB"
+RUN_TOKEN = "tM1AQmiR0Vwo"
 db = Database('store.db')
 graph_result = {}
 class DataAPI:
@@ -41,6 +41,7 @@ class DataAPI:
     def update_data(self):
         response = requests.post(f'https://www.parsehub.com/api/v2/projects/{self.project_token}/run', data=self.params)
         old_data = self.data
+        
         def pull_data():
             time.sleep(0.1)
 
@@ -49,7 +50,6 @@ class DataAPI:
                 new_data = self.get_data()
                 if new_data != old_data:
                     self.data = new_data
-                    print("Data are now Updated")
                     break
                 else:
                     print('Not updated yet')
@@ -58,6 +58,7 @@ class DataAPI:
         t = threading.Thread(target=pull_data)
         t.start()
         t.join()
+
     def get_country_data(self, country):
 
         country_data = self.data['country']
@@ -74,6 +75,7 @@ class DataAPI:
 
             if data['name'] == 'Coronavirus Cases:':
                 return data['value']
+
     def get_total_deaths(self):
         
         datas = self.data['total']
@@ -110,8 +112,6 @@ class ConnectToDatabase:
                 num_total_death = 0
 
             db.insert_country_info(name, num_total_cases, num_total_death)
-        
-        print("Successfully Insert Country Data")
 
     def insert_total_data(self, data):
         
@@ -126,8 +126,6 @@ class ConnectToDatabase:
                 continue
 
             db.insert_total_info(name, num_total_cases)
-        
-        print("Successfully Insert Total Data")
     
     def fetch_country_data(self):
 
@@ -140,10 +138,7 @@ class ConnectToDatabase:
                 'Total_Cases':row[1],
                 'Total_Deaths':row[2]
             }
-            #print(row)
             country_list_info.append(country_dict)
-        
-        print("Successfully fetch Country")
         return country_list_info
 
     def fetch_total_data(self):
@@ -155,10 +150,8 @@ class ConnectToDatabase:
                 'Name':row[0],
                 'Value':row[1]
             }
-            #print(row)
-            total_list_info.append(row)
 
-        print("Successfully fetch Total")
+            total_list_info.append(row)
         return total_list_info
 
     def update_country_data(self,data):
@@ -178,7 +171,6 @@ class ConnectToDatabase:
             
             db.update_country_info(name, num_total_cases, num_total_death)
         
-        print("Successfully Updated Country")
     def update_total_data(self, data):
         
         for total_info in data['total']:
@@ -191,36 +183,35 @@ class ConnectToDatabase:
                 continue
             db.update_total_info(name, num_total_cases)
 
-        print("Successfully Updated Total")
 def speak(text):
      
     engine = pyttsx3.init()
     engine.say(text)
     engine.runAndWait()
 
-def run_data(user_input,topFrame):
+def run_data(user_input, toplevel):
     global graph_result
     country_input = user_input
     tracker_data = DataAPI(API_KEY, PROJECT_TOKEN)
     connect = ConnectToDatabase()
     country_list = tracker_data.get_country()
+    another_frame = toplevel
     result = None
-    another_frame = topFrame
 
     UPDATE_COMMAND = "update"
 
     TOTAL_PATTERN = {
-        re.compile(r"[\w\s]+ total [\w\s]+ cases"): tracker_data.get_total_cases,
-        re.compile(r"[\w\s]+ total cases([\w\s]+|)"): tracker_data.get_total_cases,
-        re.compile(r"[\w\s]+ total [\w\s]+ deaths?"): tracker_data.get_total_deaths,
-        re.compile(r"[\w\s]+ total deaths?([\w\s]+|)"): tracker_data.get_total_deaths,
-        re.compile(r"[\w\s]+ total [\w\s]+ recovered"): tracker_data.get_total_recovered,
-        re.compile(r"[\w\s]+ total recovered([\w\s]+|)"): tracker_data.get_total_recovered
+        re.compile(r"[\w\s-]+ total [\w\s-]+ cases"): tracker_data.get_total_cases,
+        re.compile(r"[\w\s-]+ total cases([\w\s-]+|)"): tracker_data.get_total_cases,
+        re.compile(r"[\w\s-]+ total [\w\s-]+ deaths?"): tracker_data.get_total_deaths,
+        re.compile(r"[\w\s-]+ total deaths?([\w\s-]+|)"): tracker_data.get_total_deaths,
+        re.compile(r"[\w\s-]+ total [\w\s-]+ recovered"): tracker_data.get_total_recovered,
+        re.compile(r"[\w\s-]+ total recovered([\w\s-]+|)"): tracker_data.get_total_recovered
     }
 
     COUNTRY_PATTERN = {
-        re.compile(r"[\w\s]+ cases([\w\s]+|)"): lambda country: tracker_data.get_country_data(country)['total_cases'],
-        re.compile(r"[\w\s]+ deaths([\w\s]+|)"): lambda country: tracker_data.get_country_data(country)['total_death']
+        re.compile(r"[\w\s-]+ cases([\w\s-]+|)"): lambda country: tracker_data.get_country_data(country)['total_cases'],
+        re.compile(r"[\w\s-]+ deaths([\w\s-]+|)"): lambda country: tracker_data.get_country_data(country)['total_death']
     }
         
     for pattern, func in COUNTRY_PATTERN.items():
@@ -257,25 +248,25 @@ def run_data(user_input,topFrame):
     
 
     if country_input.lower() == UPDATE_COMMAND:
-        print("It is being updated now")
-
         result = "The Data is Now Updated"
         tracker_data.update_data()
+
         data = tracker_data.get_data()
         connect.update_country_data(data)
         connect.update_total_data(data)
         graph_result.setdefault("Present-Country-Result", connect.fetch_country_data())
         graph_result.setdefault("Present-Total-Result", connect.fetch_total_data())
-        
+                
         speak(result)
         return "The Data is Now Updated"
-    
-    if country_input.lower() == "show table":
+
+
+    if country_input.lower() == "show table" or country_input.lower() == "show tables"  :
 
         if len(graph_result) == 4:
             create_table = createTable(another_frame, graph_result)    
             return "Showing Table....."
         else:
-            return "Incomplete Data"
+            return "Not Enough Data Yet"
 
-    return "None"
+    return "No Result is Found"
